@@ -26,3 +26,11 @@
 *.exe
 *.out
 *.app
+
+# CMake Outputs
+*.nas.asm
+lame-3.100/config.h
+[Oo]ut/**
+
+# Visual Studio Temp
+.vs/**
