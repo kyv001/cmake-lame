@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.15)
+﻿cmake_minimum_required (VERSION 3.15)
 project (lame VERSION 1.0.0 LANGUAGES CXX C ASM_MASM)
 
 if (NOT DEFINED CMAKE_BUILD_TYPE)
@@ -187,7 +187,7 @@ if (${LAME_ASM})
 	target_compile_definitions (lame_asm PRIVATE "WIN32" "WIN64")# Windows
 endif (${LAME_ASM})
 
-# Complie Settings
+# Compile Settings
 set_target_properties (lame mp3x mp3rtp lame_enc libmp3lame libmp3lame-static
 	PROPERTIES POSITION_INDEPENDENT_CODE ON
 )

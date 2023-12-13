@@ -1,5 +1,5 @@
-# cmake-lame
-Use CMake to complie LAME library.
+﻿# cmake-lame
+Use CMake to compile LAME library.
 
 ## Platform support
 - Windows (MSVC)
