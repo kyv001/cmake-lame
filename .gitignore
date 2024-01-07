@@ -31,6 +31,8 @@
 *.nas.asm
 lame-3.100/config.h
 [Oo]ut/**
+cmake-*/**
 
-# Visual Studio Temp
+# IDE Temp
 .vs/**
+.idea/**

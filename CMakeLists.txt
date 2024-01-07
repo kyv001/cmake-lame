@@ -123,7 +123,7 @@ set (RC_SRC ${SRC_PATH}/libmp3lame/lame.rc)
 
 set (DLL_DEF ${SRC_PATH}/include/lame.def)
 
-configure_file (${SRC_PATH}/configMS.h ${SRC_PATH}/config.h @ONLY)# MSVC
+configure_file (${SRC_PATH}/configFixed.h.in ${SRC_PATH}/config.h @ONLY)# MSVC
 
 # Targets
 set (ASM_SRC_TEMP "")
@@ -219,9 +219,9 @@ if (${LAME_MP3X})
 )
 endif (${LAME_MP3X})
 
-if (${LAME_ASM})
+if (${LAME_ASM} AND MSVC)
 	target_compile_options (lame_asm PRIVATE "-Sf")# MSVC
-endif (${LAME_ASM})
+endif (${LAME_ASM} AND MSVC)
 
 # Link Libraries
 if (${LAME_SNDFILE})
@@ -229,7 +229,9 @@ if (${LAME_SNDFILE})
 endif (${LAME_SNDFILE})
 
 if (WIN32)
-	set (ADDL_LIB bufferoverflowU)# Windows
+	if (MSVC)
+		set (ADDL_LIB bufferoverflowU)# Windows
+	endif (MSVC)
 	set (WSOCK32_LIB wsock32)# Windows
 	set (USER32_LIB user32)# Windows
 endif (WIN32)
