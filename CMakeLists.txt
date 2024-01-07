@@ -1,5 +1,5 @@
 ﻿cmake_minimum_required (VERSION 3.15)
-project (lame VERSION 1.0.0 LANGUAGES CXX C ASM_MASM)
+project (cmake-lame VERSION 1.0.0 LANGUAGES CXX C)
 
 if (NOT DEFINED CMAKE_BUILD_TYPE)
 	set (CMAKE_BUILD_TYPE "Release"  CACHE STRING "Choose the type of build." FORCE)
@@ -14,8 +14,14 @@ set (CMAKE_C_STANDARD_REQUIRED ON)
 
 set (CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")# Using /MD and /MDd on MSVC
 
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
+set (LAME_INSTALL_NAME ${PROJECT_NAME})
+
 # Config Modules
 set (LAME_ASM OFF)# Can't open nasm.h
+set (LAME_MP3X OFF)# Can't open gtk.h
 set (LAME_MMX ON)
 set (LAME_MPG ON)
 set (LAME_SNDFILE OFF)
@@ -133,22 +139,36 @@ foreach (ASM_FILE ${ASM_SRC})
 endforeach (ASM_FILE ${ASM_SRC})
 
 add_executable (lame ${SRC_PATH}/config.h ${COMMON_SRC} ${LAME_SRC} ${RC_SRC})
-add_executable (mp3x ${SRC_PATH}/config.h ${COMMON_SRC} ${MPX_SRC} ${RC_SRC})
+if (${LAME_MP3X})
+	add_executable (mp3x ${SRC_PATH}/config.h ${COMMON_SRC} ${MPX_SRC} ${RC_SRC})
+endif (${LAME_MP3X})
 add_executable (mp3rtp ${SRC_PATH}/config.h ${COMMON_SRC} ${MP3RTP_SRC} ${RC_SRC})
 add_library (lame_enc SHARED ${SRC_PATH}/config.h ${DLL_SRC} ${RC_SRC})
-add_library (libmp3lame SHARED ${SRC_PATH}/config.h ${DLL_DEF} ${SRC_PATH}/libmp3lame/version.c)
-add_library (libmp3lame-static STATIC ${LAMELIB_SRC} ${MPGLIB_SRC})
+add_library (mp3lame SHARED ${SRC_PATH}/config.h ${DLL_DEF} ${SRC_PATH}/libmp3lame/version.c)
+add_library (mp3lame-static STATIC ${LAMELIB_SRC} ${MPGLIB_SRC})
 if (${LAME_ASM})
 	add_library (lame_asm STATIC ${ASM_SRC_TEMP})
 endif (${LAME_ASM})
 
 # Target Includes
+foreach (ITEM ${SRC_INC})
+		file (RELATIVE_PATH ITEM_PATH ${CMAKE_CURRENT_SOURCE_DIR} ${ITEM})
+		target_include_directories(mp3lame PUBLIC
+			"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${ITEM_PATH}>"
+			"$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${LAME_INSTALL_NAME}/${ITEM_PATH}>"
+		)
+		target_include_directories(mp3lame-static PUBLIC
+			"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${ITEM_PATH}>"
+			"$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${LAME_INSTALL_NAME}/${ITEM_PATH}>"
+		)
+endforeach (ITEM ${SRC_INC})
+
 target_include_directories (lame PRIVATE ${SRC_INC})
-target_include_directories (mp3x PRIVATE ${SRC_INC})
+if (${LAME_MP3X})
+	target_include_directories (mp3x PRIVATE ${SRC_INC})
+endif (${LAME_MP3X})
 target_include_directories (mp3rtp PRIVATE ${SRC_INC})
 target_include_directories (lame_enc PRIVATE ${SRC_INC})
-target_include_directories (libmp3lame PRIVATE ${SRC_INC})
-target_include_directories (libmp3lame-static PRIVATE ${SRC_INC})
 
 if (${LAME_ASM})
 	target_include_directories (lame_asm PRIVATE ${ASM_INC})
@@ -176,21 +196,28 @@ if (${LAME_ASM})
 	set (LAME_MACRO ${LAME_MACRO} "HAVE_NASM")
 endif (${LAME_ASM})
 
-target_compile_definitions (lame PRIVATE ${LAME_MACRO})
-target_compile_definitions (mp3x PRIVATE ${LAME_MACRO})
-target_compile_definitions (mp3rtp PRIVATE ${LAME_MACRO})
-target_compile_definitions (lame_enc PRIVATE ${LAME_MACRO})
-target_compile_definitions (libmp3lame PRIVATE ${LAME_MACRO})
-target_compile_definitions (libmp3lame-static PRIVATE ${LAME_MACRO})
+target_compile_definitions (lame PUBLIC ${LAME_MACRO})
+if (${LAME_MP3X})
+	target_compile_definitions (mp3x PUBLIC ${LAME_MACRO})
+endif (${LAME_MP3X})
+target_compile_definitions (mp3rtp PUBLIC ${LAME_MACRO})
+target_compile_definitions (lame_enc PUBLIC ${LAME_MACRO})
+target_compile_definitions (mp3lame PUBLIC ${LAME_MACRO})
+target_compile_definitions (mp3lame-static PUBLIC ${LAME_MACRO})
 
-if (${LAME_ASM})
-	target_compile_definitions (lame_asm PRIVATE "WIN32" "WIN64")# Windows
-endif (${LAME_ASM})
+if (${LAME_ASM} AND WIN32)
+	target_compile_definitions (lame_asm PUBLIC "WIN32" "WIN64")# Windows
+endif (${LAME_ASM} AND WIN32)
 
 # Compile Settings
-set_target_properties (lame mp3x mp3rtp lame_enc libmp3lame libmp3lame-static
+set_target_properties (lame mp3rtp lame_enc mp3lame mp3lame-static
 	PROPERTIES POSITION_INDEPENDENT_CODE ON
 )
+if (${LAME_MP3X})
+	set_target_properties (mp3x
+	PROPERTIES POSITION_INDEPENDENT_CODE ON
+)
+endif (${LAME_MP3X})
 
 if (${LAME_ASM})
 	target_compile_options (lame_asm PRIVATE "-Sf")# MSVC
@@ -201,26 +228,90 @@ if (${LAME_SNDFILE})
 	set (SNDFILE_LIB ${libsndfile})
 endif (${LAME_SNDFILE})
 
-set (ADDL_LIB bufferoverflowU)# Windows
-set (WSOCK32_LIB wsock32)# Windows
-set (USER32_LIB user32)# Windows
+if (WIN32)
+	set (ADDL_LIB bufferoverflowU)# Windows
+	set (WSOCK32_LIB wsock32)# Windows
+	set (USER32_LIB user32)# Windows
+endif (WIN32)
 
-target_link_libraries (lame PRIVATE libmp3lame-static ${SNDFILE_LIB} ${ADDL_LIB})
-target_link_libraries (mp3x PRIVATE libmp3lame-static ${SNDFILE_LIB} ${ADDL_LIB})
-target_link_libraries (mp3rtp PRIVATE libmp3lame-static ${SNDFILE_LIB} ${ADDL_LIB} ${WSOCK32_LIB})
-target_link_libraries (lame_enc PRIVATE libmp3lame-static ${ADDL_LIB} ${USER32_LIB})
-target_link_libraries (libmp3lame PRIVATE libmp3lame-static)
+target_link_libraries (lame PRIVATE mp3lame-static ${SNDFILE_LIB} ${ADDL_LIB})
+if (${LAME_MP3X})
+	target_link_libraries (mp3x PRIVATE mp3lame-static ${SNDFILE_LIB} ${ADDL_LIB})
+endif (${LAME_MP3X})
+target_link_libraries (mp3rtp PRIVATE mp3lame-static ${SNDFILE_LIB} ${ADDL_LIB} ${WSOCK32_LIB})
+target_link_libraries (lame_enc PRIVATE mp3lame-static ${ADDL_LIB} ${USER32_LIB})
+target_link_libraries (mp3lame PRIVATE mp3lame-static)
 
 if (${LAME_ASM})
-	target_link_libraries (libmp3lame-static PRIVATE lame_asm)
+	target_link_libraries (mp3lame-static PRIVATE lame_asm)
 endif (${LAME_ASM})
 
-# Output Path
-if (DEFINED LAME_OUTPUT)
-	set_target_properties(lame mp3x mp3rtp lame_enc libmp3lame libmp3lame-static
-		PROPERTIES
-		ARCHIVE_OUTPUT_DIRECTORY "${LAME_OUTPUT}"
-		LIBRARY_OUTPUT_DIRECTORY "${LAME_OUTPUT}"
-		RUNTIME_OUTPUT_DIRECTORY "${LAME_OUTPUT}"
+# Install
+set (LAME_CMAKE_CONFIG_INSTALL_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/${LAME_INSTALL_NAME})
+
+install (TARGETS lame mp3rtp lame_enc mp3lame mp3lame-static
+	EXPORT ${LAME_INSTALL_NAME}Targets
+	RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}" OPTIONAL
+	LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}" OPTIONAL
+	ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}" OPTIONAL
+)
+if (${LAME_MP3X})
+	install (TARGETS mp3x
+		EXPORT ${LAME_INSTALL_NAME}Targets
+		RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}" OPTIONAL
+		LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}" OPTIONAL
+		ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}" OPTIONAL
 	)
-endif (DEFINED LAME_OUTPUT)
+endif (${LAME_MP3X})
+if (${LAME_ASM})
+	install (TARGETS lame_asm
+		EXPORT ${LAME_INSTALL_NAME}Targets
+		RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}" OPTIONAL
+		LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}" OPTIONAL
+		ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}" OPTIONAL
+	)
+endif (${LAME_ASM})
+
+if (MSVC)
+	install (FILES $<TARGET_PDB_FILE:lame> DESTINATION "${CMAKE_INSTALL_BINDIR}" OPTIONAL)
+	install (FILES $<TARGET_PDB_FILE:mp3rtp> DESTINATION "${CMAKE_INSTALL_BINDIR}" OPTIONAL)
+	install (FILES $<TARGET_PDB_FILE:lame_enc> DESTINATION "${CMAKE_INSTALL_BINDIR}" OPTIONAL)
+	install (FILES $<TARGET_PDB_FILE:mp3lame> DESTINATION "${CMAKE_INSTALL_BINDIR}" OPTIONAL)
+	if (${LAME_MP3X})
+		install (FILES $<TARGET_PDB_FILE:mp3x> DESTINATION "${CMAKE_INSTALL_BINDIR}" OPTIONAL)
+	endif (${LAME_MP3X})
+endif (MSVC)
+
+foreach (ITEM ${SRC_INC})
+	file (GLOB_RECURSE HDR_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "${ITEM}/*.h")
+
+	foreach (HDR_FILE ${HDR_FILES})
+		get_filename_component (HDR_DIR ${HDR_FILE} DIRECTORY)
+		install (FILES "${CMAKE_CURRENT_SOURCE_DIR}/${HDR_FILE}" DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${LAME_INSTALL_NAME}/${HDR_DIR}" OPTIONAL)
+	endforeach (HDR_FILE ${HDR_FILES})
+endforeach (ITEM ${SRC_INC})
+
+write_basic_package_version_file (
+	"${CMAKE_CURRENT_BINARY_DIR}/${LAME_INSTALL_NAME}-config-version.cmake"
+	VERSION ${PROJECT_VERSION}
+	COMPATIBILITY AnyNewerVersion
+)
+
+configure_package_config_file (
+	"${CMAKE_CURRENT_LIST_DIR}/${LAME_INSTALL_NAME}-config.cmake.in"
+	"${CMAKE_CURRENT_BINARY_DIR}/${LAME_INSTALL_NAME}-config.cmake"
+	INSTALL_DESTINATION ${LAME_CMAKE_CONFIG_INSTALL_DIR}
+	NO_CHECK_REQUIRED_COMPONENTS_MACRO
+)
+
+install (FILES
+	"${CMAKE_CURRENT_BINARY_DIR}/${LAME_INSTALL_NAME}-config.cmake"
+	"${CMAKE_CURRENT_BINARY_DIR}/${LAME_INSTALL_NAME}-config-version.cmake"
+	DESTINATION ${LAME_CMAKE_CONFIG_INSTALL_DIR}
+)
+
+install (EXPORT ${LAME_INSTALL_NAME}Targets
+	FILE "${LAME_INSTALL_NAME}-targets.cmake"
+	NAMESPACE ${LAME_INSTALL_NAME}::
+	DESTINATION ${LAME_CMAKE_CONFIG_INSTALL_DIR}
+)
