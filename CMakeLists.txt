@@ -8,9 +8,10 @@ endif (NOT DEFINED CMAKE_BUILD_TYPE)
 set (CMAKE_CXX_STANDARD 20)# Using C++20
 set (CMAKE_CXX_EXTENSIONS OFF)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
-set (CMAKE_C_STANDARD 99)# Using C17
+set (CMAKE_C_STANDARD 17)# Using C17
 set (CMAKE_C_EXTENSIONS OFF)
 set (CMAKE_C_STANDARD_REQUIRED ON)
+set (CMAKE_C_FLAGS " -Wimplicit-function-declaration -Wint-conversion")
 
 set (CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")# Using /MD and /MDd on MSVC
 
