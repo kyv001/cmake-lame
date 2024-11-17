@@ -11,7 +11,7 @@ set (CMAKE_CXX_STANDARD_REQUIRED ON)
 set (CMAKE_C_STANDARD 17)# Using C17
 set (CMAKE_C_EXTENSIONS OFF)
 set (CMAKE_C_STANDARD_REQUIRED ON)
-set (CMAKE_C_FLAGS " -Wno-implicit-function-declaration -Wno-int-conversion")
+set (CMAKE_C_FLAGS " -Wno-implicit-function-declaration -Wno-int-conversion -lm")
 
 set (CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")# Using /MD and /MDd on MSVC
 
@@ -144,7 +144,6 @@ if (${LAME_MP3X})
 	add_executable (mp3x ${SRC_PATH}/config.h ${COMMON_SRC} ${MPX_SRC} ${RC_SRC})
 endif (${LAME_MP3X})
 add_executable (mp3rtp ${SRC_PATH}/config.h ${COMMON_SRC} ${MP3RTP_SRC} ${RC_SRC})
-add_library (lame_enc SHARED ${SRC_PATH}/config.h ${DLL_SRC} ${RC_SRC})
 add_library (mp3lame SHARED ${SRC_PATH}/config.h ${DLL_DEF} ${SRC_PATH}/libmp3lame/version.c)
 add_library (mp3lame-static STATIC ${LAMELIB_SRC} ${MPGLIB_SRC})
 if (${LAME_ASM})
@@ -169,7 +168,6 @@ if (${LAME_MP3X})
 	target_include_directories (mp3x PRIVATE ${SRC_INC})
 endif (${LAME_MP3X})
 target_include_directories (mp3rtp PRIVATE ${SRC_INC})
-target_include_directories (lame_enc PRIVATE ${SRC_INC})
 
 if (${LAME_ASM})
 	target_include_directories (lame_asm PRIVATE ${ASM_INC})
@@ -202,7 +200,6 @@ if (${LAME_MP3X})
 	target_compile_definitions (mp3x PUBLIC ${LAME_MACRO})
 endif (${LAME_MP3X})
 target_compile_definitions (mp3rtp PUBLIC ${LAME_MACRO})
-target_compile_definitions (lame_enc PUBLIC ${LAME_MACRO})
 target_compile_definitions (mp3lame PUBLIC ${LAME_MACRO})
 target_compile_definitions (mp3lame-static PUBLIC ${LAME_MACRO})
 
@@ -211,7 +208,7 @@ if (${LAME_ASM} AND WIN32)
 endif (${LAME_ASM} AND WIN32)
 
 # Compile Settings
-set_target_properties (lame mp3rtp lame_enc mp3lame mp3lame-static
+set_target_properties (lame mp3rtp mp3lame mp3lame-static
 	PROPERTIES POSITION_INDEPENDENT_CODE ON
 )
 if (${LAME_MP3X})
@@ -242,7 +239,6 @@ if (${LAME_MP3X})
 	target_link_libraries (mp3x PRIVATE mp3lame-static ${SNDFILE_LIB} ${ADDL_LIB})
 endif (${LAME_MP3X})
 target_link_libraries (mp3rtp PRIVATE mp3lame-static ${SNDFILE_LIB} ${ADDL_LIB} ${WSOCK32_LIB})
-target_link_libraries (lame_enc PRIVATE mp3lame-static ${ADDL_LIB} ${USER32_LIB})
 target_link_libraries (mp3lame PRIVATE mp3lame-static)
 
 if (${LAME_ASM})
@@ -257,7 +253,7 @@ if (LAME_VCPKG_TOOLS_HINT)
 else ()
 	set(TOOLS_DIR ${CMAKE_INSTALL_BINDIR})
 endif ()
-install (TARGETS lame mp3rtp lame_enc mp3lame mp3lame-static
+install (TARGETS lame mp3rtp mp3lame mp3lame-static
 	EXPORT ${LAME_INSTALL_NAME}Targets
 	RUNTIME DESTINATION "${TOOLS_DIR}" OPTIONAL
 	LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}" OPTIONAL

@@ -1,0 +1,10 @@
+/home/kyv/Templates/cmake-lame/CMakeFiles/lame.dir
+/home/kyv/Templates/cmake-lame/CMakeFiles/mp3rtp.dir
+/home/kyv/Templates/cmake-lame/CMakeFiles/mp3lame.dir
+/home/kyv/Templates/cmake-lame/CMakeFiles/mp3lame-static.dir
+/home/kyv/Templates/cmake-lame/CMakeFiles/edit_cache.dir
+/home/kyv/Templates/cmake-lame/CMakeFiles/rebuild_cache.dir
+/home/kyv/Templates/cmake-lame/CMakeFiles/list_install_components.dir
+/home/kyv/Templates/cmake-lame/CMakeFiles/install.dir
+/home/kyv/Templates/cmake-lame/CMakeFiles/install/local.dir
+/home/kyv/Templates/cmake-lame/CMakeFiles/install/strip.dir
