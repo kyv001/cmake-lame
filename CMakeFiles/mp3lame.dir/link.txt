@@ -1,1 +1,0 @@
-/usr/bin/cc -fPIC  -Wno-implicit-function-declaration -Wno-int-conversion -lm -Wl,--dependency-file,CMakeFiles/mp3lame.dir/link.d -shared -Wl,-soname,libmp3lame.so -o libmp3lame.so "CMakeFiles/mp3lame.dir/lame-3.100/libmp3lame/version.c.o"  libmp3lame-static.a
