@@ -450,7 +450,7 @@ mp3rtp_sources = \
 	frontend/mp3rtp.c
 
 dll_sources = \
-	dll/BladeMP3EncDll.c
+	dll/BladeMP3EncDLL.c
 
 common_sources = \
 	frontend/main.c \
